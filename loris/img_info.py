@@ -352,6 +352,7 @@ class InfoCache(object):
 
     @staticmethod
     def ident_from_request(request):
+        logger.debug(request)
         return '/'.join(request.path[1:].split('/')[:-1])
 
     def _get_info_fp(self, request):
