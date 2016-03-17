@@ -408,6 +408,8 @@ class InfoCache(object):
     #     return len([_ for fp in ff(fps, pat) for r,dps,fps in w(self.root)])
 
     def __contains__(self, request):
+        logger.debug('__contains__ line 411)
+        logger.debug(request.__class__.__name__)
         return self.has_key(request)
 
     def __getitem__(self, request):
