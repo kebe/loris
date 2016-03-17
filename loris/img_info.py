@@ -422,6 +422,8 @@ class InfoCache(object):
     def __setitem__(self, request, info):
         # to fs
         logger.debug('request passed to __setitem__: %s' % (request,))
+        logger.debug('__setitem__ img_info.py line 424')
+        logger.debug(request.__class__.__name__)
         info_fp = self._get_info_fp(request)
         dp = os.path.dirname(info_fp)
         if not os.path.isdir(dp):
