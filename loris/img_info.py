@@ -355,8 +355,7 @@ class InfoCache(object):
         logger.debug(request.__class__.__name__)
         logger.debug(request)
         logger.debug('eryeye yg')
-        return os.path.join('/', request)
-        #return '/'.join(request.path[1:].split('/')[:-1])
+        return '/'.join(request.path[1:].split('/')[:-1])
 
     def _get_info_fp(self, request):
         ident = InfoCache.ident_from_request(request)
