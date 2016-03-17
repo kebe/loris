@@ -352,7 +352,7 @@ class InfoCache(object):
 
     @staticmethod
     def ident_from_request(request):
-        logger.debug('logging sg')
+        logger.debug(request.__class__.__name__)
         logger.debug(request)
         logger.debug('eryeye yg')
         return '/'.join(request.path[1:].split('/')[:-1])

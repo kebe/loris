@@ -262,6 +262,7 @@ class Loris(object):
 
     def wsgi_app(self, environ, start_response):
         request = Request(environ)
+        logger.debug(request.__class__.__name__)
         response = self.route(request)
         return response(environ, start_response)
 
