@@ -408,7 +408,7 @@ class InfoCache(object):
     #     return len([_ for fp in ff(fps, pat) for r,dps,fps in w(self.root)])
 
     def __contains__(self, request):
-        logger.debug('__contains__ line 411)
+        logger.debug('__contains__ line 411')
         logger.debug(request.__class__.__name__)
         return self.has_key(request)
 
@@ -422,6 +422,8 @@ class InfoCache(object):
     def __setitem__(self, request, info):
         # to fs
         logger.debug('request passed to __setitem__: %s' % (request,))
+        logger.debug('__setitem__ img_info.py line 424')
+        logger.debug(request.__class__.__name__)
         info_fp = self._get_info_fp(request)
         dp = os.path.dirname(info_fp)
         if not os.path.isdir(dp):
