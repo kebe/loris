@@ -268,6 +268,11 @@ class Loris(object):
 
     def route(self, request):
         base_uri, ident, params, request_type = self._dissect_uri(request)
+        logger.debug('in route')
+        logger.debug(uri)
+        logger.debug(ident)
+        logger.debug(params)
+        logger.debug(request_type)
         # index.txt
         if ident == '':
             return self.get_index(request)
@@ -335,7 +340,7 @@ class Loris(object):
         #if r.path.endswith('info.json'):
             ident = '/'.join(r.path[1:].split('/')[:-1])
             logger.debug('line 336')
-            ident = ident.split('-')[0]
+            #ident = ident.split('-')[0]
             params = 'info.json'
 
         # Else this is probably an image request...
