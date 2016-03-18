@@ -234,7 +234,8 @@ class SimpleHTTPResolver(_AbstractResolver):
         elif ident[0:6] == 'http:/' or ident[0:7] == 'https:/':
             cache_subroot = 'http'
 
-        cache_subroot = join(cache_subroot, SimpleHTTPResolver._ident_file_structure(ident))
+        fedora_ident = ident.split('-')[0]
+        cache_subroot = join(cache_subroot, SimpleHTTPResolver._ident_file_structure(fedora_ident))
 
         return cache_subroot
 
