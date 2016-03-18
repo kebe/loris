@@ -334,11 +334,13 @@ class Loris(object):
         elif r.path.endswith('info.json'):
         #if r.path.endswith('info.json'):
             ident = '/'.join(r.path[1:].split('/')[:-1])
+            logger.debug('line 336')
             ident = ident.split('-')[0]
             params = 'info.json'
 
         # Else this is probably an image request...
         else:
+            logger.debug('line 343')
             logger.debug(r.path)
             ident = '/'.join(r.path[1:].split('/')[:-4])
             # ...unless the path isn't long enough to be one, in which case
@@ -346,7 +348,10 @@ class Loris(object):
             # Could still break if your identifier has 5 slashes
             if ident == '':
                 ident = r.path[1:]
+                logger.debug('line 351')
+                logger.debug(r.path[1:])
                 if self.redirect_id_slash_to_info and ident.endswith('/'):
+                    logger.debug('line 354')
                     ident = ident[:-1]
             else:
                 params = '/'.join(r.path.split('/')[-4:])
