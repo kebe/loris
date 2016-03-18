@@ -334,6 +334,7 @@ class Loris(object):
         elif r.path.endswith('info.json'):
         #if r.path.endswith('info.json'):
             ident = '/'.join(r.path[1:].split('/')[:-1])
+            ident = ident.split('-')[0]
             params = 'info.json'
 
         # Else this is probably an image request...
