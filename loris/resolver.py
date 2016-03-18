@@ -219,7 +219,8 @@ class SimpleHTTPResolver(_AbstractResolver):
             first_slash = ident.find('/')
             return '%s//%s' % (ident[:first_slash], ident[first_slash:].lstrip('/'))
         else:
-            return self.source_prefix + ident + self.source_suffix
+            fedora_ident = ident.split('-')[0]
+            return self.source_prefix + fedora_ident + self.source_suffix
 
     #Get a subdirectory structure for the cache_subroot through hashing.
     @staticmethod
