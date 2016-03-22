@@ -220,6 +220,10 @@ class SimpleHTTPResolver(_AbstractResolver):
             return '%s//%s' % (ident[:first_slash], ident[first_slash:].lstrip('/'))
         else:
             fedora_ident = ident.split('-')[0]
+            #there maybe an info.json string right after the identifier which we'll have to put back after
+            #we remove the version number
+            if ident.endswith('info.json')
+                fedora_ident = fedora_ident + '/info.json'
             return self.source_prefix + fedora_ident + self.source_suffix
 
     #Get a subdirectory structure for the cache_subroot through hashing.
@@ -318,6 +322,76 @@ class SimpleHTTPResolver(_AbstractResolver):
             logger.info("Copied %s to %s" % (fp, local_fp))
 
             return (local_fp, format)
+
+
+    def uncache(self, ident):
+        ident = unquote(ident)
+
+        local_fp = join(self.cache_root, SimpleHTTPResolver._cache_subroot(ident))
+        local_fp = join(local_fp)
+
+        if exists(local_fp):
+            cached_object = glob.glob(join(local_fp, 'loris_cache.*'))
+
+            if len(cached_object) > 0:
+                # Remove all cached items ---------------------cached_object = cached_object[0]
+            else:
+                public_message = 'Cached image not found for identifier: %s.' % (ident)
+                log_message = 'Cached image not found for identifier: %s. Empty directory where image expected?' % (ident)
+                logger.warn(log_message)
+                raise ResolverException(404, public_message)
+
+            format = self.format_from_ident(cached_object,None)
+            logger.debug('src image from local disk: %s' % (cached_object,))
+            return (cached_object, format)
+        else:
+            fp = self._web_request_url(ident)
+
+            logger.debug('src image: %s' % (fp,))
+
+            try:
+                response = requests.get(fp, stream = False, verify=self.ssl_check, **self.request_options())
+            except requests.exceptions.MissingSchema:
+                public_message = 'Bad URL request made for identifier: %s.' % (ident,)
+                log_message = 'Bad URL request at %s for identifier: %s.' % (fp,ident)
+                logger.warn(log_message)
+                raise ResolverException(404, public_message)
+
+            if response.status_code != 200:
+                public_message = 'Source image not found for identifier: %s. Status code returned: %s' % (ident,response.status_code)
+                log_message = 'Source image not found at %s for identifier: %s. Status code returned: %s' % (fp,ident,response.status_code)
+                logger.warn(log_message)
+                raise ResolverException(404, public_message)
+
+            if 'content-type' in response.headers:
+                try:
+                    format = self.format_from_ident(ident, constants.FORMATS_BY_MEDIA_TYPE[response.headers['content-type']])
+                except KeyError:
+                    logger.warn('Your server may be responding with incorrect content-types. Reported %s for ident %s.'
+                                % (response.headers['content-type'],ident))
+                    #Attempt without the content-type
+                    format = self.format_from_ident(ident, None)
+            else:
+                format = self.format_from_ident(ident, None)
+
+            logger.debug('src format %s' % (format,))
+
+            local_fp = join(local_fp, "loris_cache." + format)
+
+            try:
+                makedirs(dirname(local_fp))
+            except:
+                logger.debug("Directory already existed... possible problem if not a different format")
+
+            with open(local_fp, 'wb') as fd:
+                for chunk in response.iter_content(2048):
+                    fd.write(chunk)
+
+            logger.info("Copied %s to %s" % (fp, local_fp))
+
+            return (local_fp, format)
+
+
 
 
 class TemplateHTTPResolver(SimpleHTTPResolver):
