@@ -16,6 +16,7 @@ import constants
 import hashlib
 import glob
 import requests
+import re
 
 logger = getLogger(__name__)
 
@@ -219,11 +220,8 @@ class SimpleHTTPResolver(_AbstractResolver):
             first_slash = ident.find('/')
             return '%s//%s' % (ident[:first_slash], ident[first_slash:].lstrip('/'))
         else:
-            fedora_ident = ident.split('-')[0]
-            #there maybe an info.json string right after the identifier which we'll have to put back after
-            #we remove the version number
-            if ident.endswith('info.json'):
-                fedora_ident = fedora_ident + '/info.json'
+            #we need to remove the version number from the ident if it exists
+            fedora_ident = re.sub(r'-version(\d)+', '' , ident) 
             return self.source_prefix + fedora_ident + self.source_suffix
 
     #Get a subdirectory structure for the cache_subroot through hashing.
