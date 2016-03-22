@@ -222,7 +222,7 @@ class SimpleHTTPResolver(_AbstractResolver):
             fedora_ident = ident.split('-')[0]
             #there maybe an info.json string right after the identifier which we'll have to put back after
             #we remove the version number
-            if ident.endswith('info.json')
+            if ident.endswith('info.json'):
                 fedora_ident = fedora_ident + '/info.json'
             return self.source_prefix + fedora_ident + self.source_suffix
 
