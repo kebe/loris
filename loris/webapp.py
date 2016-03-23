@@ -276,6 +276,8 @@ class Loris(object):
             return NotFoundResponse(msg)
         elif params == '' and request_type == 'info':
             r = LorisResponse()
+	    #added line below because we were getting access-control-allow-origin errors
+	    r.set_acao(request, self.cors_regex)
             r.headers['Location'] = '%s/info.json' % (base_uri,)
             r.status_code = 303
             return r
