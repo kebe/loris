@@ -562,9 +562,20 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
             first_slash = ident.find('/')
             return '%s//%s' % (ident[:first_slash], ident[first_slash:].lstrip('/'))
         else:
+            #We'll strip out the derivative type and use it as suffix later
+            if '-low_resolution' in ident:
+                sourceSuffix = '/low_resolution'
+                ident = ident.replace('-low_resolution', '')
+            else:
+                sourceSuffix = '/content'
+                ident = ident.replace('-content', '')
+            #else:
+                #message = 'Could not find correct derivative for this request string: ' + ident
+                #raise ResolverException(404, message)
+
             #we need to remove the version number from the ident if it exists
-            fedora_ident = re.sub(r'-version(\d)+', '' , ident) 
-            return self.source_prefix + fedora_ident + self.source_suffix
+            fedora_ident = re.sub(r'-version(\d)+', '' , ident)
+            return self.source_prefix + fedora_ident + sourceSuffix
 
     #Get a subdirectory structure for the cache_subroot through hashing.
     @staticmethod
