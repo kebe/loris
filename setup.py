@@ -18,8 +18,8 @@ EX_NOUSER = 67
 ETC_DIR_DEFAULT = '/etc/loris2'
 CONFIG_FILE_NAME = 'loris2.conf'
 
-BIN_DIR_DEFAULT = '/usr/local/bin'
-LIB_DIR_DEFAULT = '/usr/local/lib'
+BIN_DIR_DEFAULT = '/opt/kakadu/current/bin/Linux-x86-64-gcc'
+LIB_DIR_DEFAULT = '/opt/kakadu/current/apps/make'
 CACHE_DIR_DEFAULT = '/var/cache/loris2'
 
 KDU_EXPAND_DEFAULT = os.path.join(BIN_DIR_DEFAULT, 'kdu_expand')
