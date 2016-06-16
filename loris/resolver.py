@@ -17,6 +17,7 @@ import hashlib
 import glob
 import requests
 import re
+import transforms
 
 logger = getLogger(__name__)
 
@@ -519,8 +520,10 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         ident = unquote(ident)
         fp = join(self.cache_root, OsuSimpleHTTPResolver._cache_subroot(ident))
         if exists(fp):
+        logger.debug('fp exists')
             return True
         else:
+        logger.debug('fp does not exist')
             fp = self._web_request_url(ident)
 
             if self.head_resolvable:
@@ -588,7 +591,9 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
                 cache_subroot = join(cache_subroot, split_ident)
         elif ident[0:6] == 'http:/' or ident[0:7] == 'https:/':
             cache_subroot = 'http'
-
+       
+    logger.debug("printing ident:")
+        logger.debug(ident)
         cache_subroot = join(cache_subroot, OsuSimpleHTTPResolver._ident_file_structure(ident))
 
         return cache_subroot
@@ -607,12 +612,15 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         return file_structure
 
     def resolve(self, ident):
+        make_jp2 = False #default value for whether to transform the downloaded image to jp2 or not
         ident = unquote(ident)
 
         local_fp = join(self.cache_root, OsuSimpleHTTPResolver._cache_subroot(ident))
         local_fp = join(local_fp)
 
+    logger.debug('in resolver.py about to do if')
         if exists(local_fp):
+        logger.debug('inside if')
             cached_object = glob.glob(join(local_fp, 'loris_cache.*'))
 
             if len(cached_object) > 0:
@@ -625,8 +633,11 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
 
             format = self.format_from_ident(cached_object,None)
             logger.debug('src image from local disk: %s' % (cached_object,))
-            return (cached_object, format)
+        logger.debug(make_jp2)
+        logger.debug(format)
+            return (cached_object, format, make_jp2)
         else:
+        logger.debug('inside else')
             fp = self._web_request_url(ident)
 
             logger.debug('src image: %s' % (fp,))
@@ -669,6 +680,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
                 for chunk in response.iter_content(2048):
                     fd.write(chunk)
 
+        make_jp2 = True
             logger.info("Copied %s to %s" % (fp, local_fp))
 
-            return (local_fp, format)
+            return (local_fp, format, make_jp2)

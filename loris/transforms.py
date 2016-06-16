@@ -283,13 +283,17 @@ class OPJ_JP2Transformer(_AbstractJP2Transformer):
 
         opj_cmd = ' '.join((self.opj_decompress,i,reg,red,o))
 
+        logger.debug(fifo_fp)
         logger.debug('Calling: %s' % (opj_cmd,))
+    logger.debug(fifo_fp)
 
         # Start the shellout. Blocks until the pipe is empty
         with open(devnull, 'w') as fnull:
+        logger.debug('opening devnull')
             opj_decompress_proc = subprocess.Popen(opj_cmd, shell=True, bufsize=-1,
                 stderr=fnull, stdout=fnull, env=self.env)
-
+    
+    logger.debug('opening fifo')
         f = open(fifo_fp, 'rb')
         logger.debug('Opened %s' % fifo_fp)
 
@@ -379,7 +383,7 @@ class KakaduJP2Transformer(_AbstractJP2Transformer):
         fifo_fp = self._make_tmp_fp()
 
         # kdu command
-        q = '-quiet'
+        #q = '-quiet'
         t = '-num_threads %s' % (self.num_threads,)
         i = '-i "%s"' % (src_fp,)
         o = '-o %s' % (fifo_fp,)
@@ -388,19 +392,24 @@ class KakaduJP2Transformer(_AbstractJP2Transformer):
         region_arg = self._region_to_kdu_arg(image_request.region_param)
         reg = '-region %s' % (region_arg,) if region_arg else ''
 
-        kdu_cmd = ' '.join((self.kdu_expand,q,i,t,reg,red,o))
+        #kdu_cmd = ' '.join((self.kdu_expand,q,i,t,reg,red,o))
+    kdu_cmd = 'LD_LIBRARY_PATH=/opt/kakadu/current/apps/make ' + ' '.join((self.kdu_expand,i,t,reg,red,o))
 
         # make the named pipe
         mkfifo_call = '%s %s' % (self.mkfifo, fifo_fp)
         logger.debug('Calling %s' % (mkfifo_call,))
         resp = subprocess.check_call(mkfifo_call, shell=True)
+    logger.debug(resp)
+    logger.debug(self.env)
 
         try:
             # Start the kdu shellout. Blocks until the pipe is empty
             logger.debug('Calling: %s' % (kdu_cmd,))
             kdu_expand_proc = subprocess.Popen(kdu_cmd, shell=True, bufsize=-1,
                 stderr=subprocess.PIPE, env=self.env)
-
+        
+        logger.debug('about to open fifo')
+        logger.debug(subprocess.PIPE)
             f = open(fifo_fp, 'rb')
             logger.debug('Opened %s' % fifo_fp)
 
@@ -430,3 +439,18 @@ class KakaduJP2Transformer(_AbstractJP2Transformer):
             if kdu_exit != 0:
                 map(logger.error, map(string.strip, kdu_expand_proc.stderr))
             unlink(fifo_fp)
+
+
+    def compress(self, src_fp, dest_fp):
+    logger.debug('in compress')
+    logger.debug(dest_fp)
+        i = '-i "%s"' % (src_fp,)
+        fifo_fp = dest_fp + 'loris_cache.jp2'
+        o = '-o %s' % (fifo_fp,)
+
+        kdu_cmd = ' '.join(('LD_LIBRARY_PATH=/opt/kakadu/current/apps/make /opt/kakadu/current/bin/Linux-x86-64-gcc/kdu_compress',i,o))
+
+        # Start the kdu shellout. Blocks until the pipe is empty
+        logger.debug('Calling compressor: %s' % (kdu_cmd,))
+    resp = subprocess.check_call(kdu_cmd, shell=True)
+    logger.debug(resp)
