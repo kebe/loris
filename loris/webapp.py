@@ -272,9 +272,11 @@ class Loris(object):
             return self.get_index(request)
 
         if not self.resolver.is_resolvable(ident):
+            logger.debug('webapp- No it was not resolvable')
             msg = "could not resolve identifier: %s " % (ident)
             return NotFoundResponse(msg)
         elif params == '' and request_type == 'info':
+            logger.debug('about to redirect to .info')
             r = LorisResponse()
             #added line below because we were getting access-control-allow-origin errors
             r.set_acao(request, self.cors_regex)
@@ -284,6 +286,7 @@ class Loris(object):
 
         # pixels
         elif request_type == 'image':
+            logger.debug('it must be an image')
             try:
                 slices = params.split('/')
                 info_or_quality_dot_format = slices.pop()
@@ -305,6 +308,7 @@ class Loris(object):
                 return BadRequestResponse('could not parse image request')
         # info
         elif params == 'info.json' and request_type == 'info':
+            logger.debug('yeah params = info.json')
             return self.get_info(request, ident, base_uri)
 
         # favicon.ico
@@ -312,6 +316,7 @@ class Loris(object):
             return self.get_favicon(request)
         else:
             return BadRequestResponse()
+
 
     def _dissect_uri(self, r):
         # This is ugly because wsgi unescapes uris before we get here making
@@ -441,38 +446,35 @@ class Loris(object):
             return r
 
     def _get_info(self,ident,request,base_uri,src_fp=None,src_format=None):
-        
-    if self.enable_caching:
+        if self.enable_caching:
             in_cache = request in self.info_cache
         else:
             in_cache = False
 
         if in_cache:
-        transformer = self.transformers['jp2']
-        dest_fp = src_fp[0:src_fp.rfind('/')+1] #strip off everything after last '/' in order to get folder destination
-            transformer.compress(src_fp, dest_fp)
+            transformer = self.transformers['jp2']
+            dest_fp = src_fp[0:src_fp.rfind('/')+1] #strip off everything after last '/' in order to get folder destination
+            transformer.compress(src_fp)
             return self.info_cache[request]
         else:
-        logger.debug('in else _get_info')
-        make_jp2 = False  # set make_jp2 in case we don't go inside the if statement
+            make_jp2 = False
             if not all((src_fp, src_format)):
                 # get_img can pass in src_fp, src_format because it needs them
                 # elsewhere; get_info does not.
                 src_fp, src_format, make_jp2 = self.resolver.resolve(ident)
-        dest_fp = src_fp[0:src_fp.rfind('/')+1] #strip off everything after last '/' in order to get folder destination
-        logger.debug('about to do next line')
-        logger.debug(src_fp)
-        logger.debug(src_format)
-        #logger.debug(make_jp2)
-    
-        if make_jp2:
+
+            if make_jp2
                 # Get the transformer
-            logger.debug('inside if')
                 transformer = self.transformers['jp2']
-            logger.debug('about to call compress method')
+                transformer.compress(src_fp)
+
+            dest_fp = src_fp[0:src_fp.rfind('/')+1] #strip off everything after last '/' in order to get folder destination
+            if make_jp2:
+                # Get the transformer
+                transformer = self.transformers['jp2']
+                logger.debug('about to call compress method')
                 transformer.compress(src_fp, dest_fp)
-            
-        logger.debug('done transforming')
+
             formats = self.transformers[src_format].target_formats
 
             logger.debug('Format: %s' % (src_format,))
@@ -542,10 +544,10 @@ class Loris(object):
 
                 # resolve the identifier
                 src_fp, src_format, make_jp2 = self.resolver.resolve(ident)
-        if make_jp2:
-                    # Get the transformer
-                    transformer = self.transformers['jp2']
-                    transformer.compress(src_fp)
+                # if make_jp2
+                #     # Get the transformer
+                #     transformer = self.transformers['jp2']
+                #     transformer.compress(src_fp)
 
                 # hand the Image object its info
                 info = self._get_info(ident, request, base_uri, src_fp, src_format)[0]
@@ -560,10 +562,11 @@ class Loris(object):
 
                 # 1. Resolve the identifier
                 src_fp, src_format, make_jp2 = self.resolver.resolve(ident)
-                if make_jp2:
-                    # Get the transformer
-                    transformer = self.transformers['jp2']
-                    transformer.compress(src_fp)
+
+                # if make_jp2
+                #     # Get the transformer
+                #     transformer = self.transformers['jp2']
+                #     transformer.compress(src_fp)
 
                 # 2. Hand the Image object its info
                 info = self._get_info(ident, request, base_uri, src_fp, src_format)[0]

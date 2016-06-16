@@ -393,14 +393,12 @@ class KakaduJP2Transformer(_AbstractJP2Transformer):
         reg = '-region %s' % (region_arg,) if region_arg else ''
 
         #kdu_cmd = ' '.join((self.kdu_expand,q,i,t,reg,red,o))
-    kdu_cmd = 'LD_LIBRARY_PATH=/opt/kakadu/current/apps/make ' + ' '.join((self.kdu_expand,i,t,reg,red,o))
+        kdu_cmd = 'LD_LIBRARY_PATH=/opt/kakadu/current/apps/make ' + ' '.join((self.kdu_expand,i,t,reg,red,o))
 
         # make the named pipe
         mkfifo_call = '%s %s' % (self.mkfifo, fifo_fp)
         logger.debug('Calling %s' % (mkfifo_call,))
         resp = subprocess.check_call(mkfifo_call, shell=True)
-    logger.debug(resp)
-    logger.debug(self.env)
 
         try:
             # Start the kdu shellout. Blocks until the pipe is empty
@@ -408,8 +406,6 @@ class KakaduJP2Transformer(_AbstractJP2Transformer):
             kdu_expand_proc = subprocess.Popen(kdu_cmd, shell=True, bufsize=-1,
                 stderr=subprocess.PIPE, env=self.env)
         
-        logger.debug('about to open fifo')
-        logger.debug(subprocess.PIPE)
             f = open(fifo_fp, 'rb')
             logger.debug('Opened %s' % fifo_fp)
 
@@ -442,8 +438,6 @@ class KakaduJP2Transformer(_AbstractJP2Transformer):
 
 
     def compress(self, src_fp, dest_fp):
-    logger.debug('in compress')
-    logger.debug(dest_fp)
         i = '-i "%s"' % (src_fp,)
         fifo_fp = dest_fp + 'loris_cache.jp2'
         o = '-o %s' % (fifo_fp,)
@@ -452,5 +446,4 @@ class KakaduJP2Transformer(_AbstractJP2Transformer):
 
         # Start the kdu shellout. Blocks until the pipe is empty
         logger.debug('Calling compressor: %s' % (kdu_cmd,))
-    resp = subprocess.check_call(kdu_cmd, shell=True)
-    logger.debug(resp)
+        resp = subprocess.check_call(kdu_cmd, shell=True)
