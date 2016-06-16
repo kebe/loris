@@ -463,7 +463,7 @@ class Loris(object):
                 # elsewhere; get_info does not.
                 src_fp, src_format, make_jp2 = self.resolver.resolve(ident)
 
-            if make_jp2
+            if make_jp2:
                 # Get the transformer
                 transformer = self.transformers['jp2']
                 transformer.compress(src_fp)

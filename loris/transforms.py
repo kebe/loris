@@ -285,15 +285,15 @@ class OPJ_JP2Transformer(_AbstractJP2Transformer):
 
         logger.debug(fifo_fp)
         logger.debug('Calling: %s' % (opj_cmd,))
-    logger.debug(fifo_fp)
+        logger.debug(fifo_fp)
 
         # Start the shellout. Blocks until the pipe is empty
         with open(devnull, 'w') as fnull:
-        logger.debug('opening devnull')
+            logger.debug('opening devnull')
             opj_decompress_proc = subprocess.Popen(opj_cmd, shell=True, bufsize=-1,
                 stderr=fnull, stdout=fnull, env=self.env)
     
-    logger.debug('opening fifo')
+        logger.debug('opening fifo')
         f = open(fifo_fp, 'rb')
         logger.debug('Opened %s' % fifo_fp)
 
