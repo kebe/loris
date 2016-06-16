@@ -454,7 +454,7 @@ class Loris(object):
         if in_cache:
             transformer = self.transformers['jp2']
             dest_fp = src_fp[0:src_fp.rfind('/')+1] #strip off everything after last '/' in order to get folder destination
-            transformer.compress(src_fp)
+            transformer.compress(src_fp, dest_fp)
             return self.info_cache[request]
         else:
             make_jp2 = False
@@ -462,11 +462,6 @@ class Loris(object):
                 # get_img can pass in src_fp, src_format because it needs them
                 # elsewhere; get_info does not.
                 src_fp, src_format, make_jp2 = self.resolver.resolve(ident)
-
-            if make_jp2:
-                # Get the transformer
-                transformer = self.transformers['jp2']
-                transformer.compress(src_fp)
 
             dest_fp = src_fp[0:src_fp.rfind('/')+1] #strip off everything after last '/' in order to get folder destination
             if make_jp2:
