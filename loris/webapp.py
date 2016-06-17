@@ -452,13 +452,12 @@ class Loris(object):
             in_cache = False
 
         if in_cache:
-            logger.debug('in cache')
-            transformer = self.transformers['jp2']
-            dest_fp = src_fp[0:src_fp.rfind('/')+1] #strip off everything after last '/' in order to get folder destination
-            transformer.compress(src_fp, dest_fp)
+            # src_fp may not be defined here if cached item is bad. TODO 
+            #transformer = self.transformers['jp2']
+            #dest_fp = src_fp[0:src_fp.rfind('/')+1] #strip off everything after last '/' in order to get folder destination
+            #transformer.compress(src_fp, dest_fp)
             return self.info_cache[request]
         else:
-            logger.debug('not in cache')
             make_jp2 = False # set make_jp2 in case we don't go inside the if statement
             if not all((src_fp, src_format)):
                 # get_img can pass in src_fp, src_format because it needs them
