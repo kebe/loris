@@ -441,7 +441,7 @@ class KakaduJP2Transformer(_AbstractJP2Transformer):
         i = '-i "%s"' % (src_fp,)
         fifo_fp = dest_fp + 'loris_cache.jp2'
         o = '-o %s' % (fifo_fp,)
-        rest = '-rate 6,3,1.5,0.75,0.375,0.1875,0.09375,0.046875 Creversible=no Clevels=5 Stiles={1024,1024} Cblk={64,64} Corder=RPCL'
+        rest = "-rate 6,3,1.5,0.75,0.375,0.1875,0.09375,0.046875 'Creversible=no' 'Clevels=5' 'Stiles={1024,1024}' 'Cblk={64,64}' 'Corder=RPCL'"
 
         kdu_cmd = ' '.join(('LD_LIBRARY_PATH=/opt/kakadu/current/apps/make /opt/kakadu/current/bin/Linux-x86-64-gcc/kdu_compress',i,o,rest))
 
