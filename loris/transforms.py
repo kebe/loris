@@ -436,8 +436,9 @@ class KakaduJP2Transformer(_AbstractJP2Transformer):
                 map(logger.error, map(string.strip, kdu_expand_proc.stderr))
             unlink(fifo_fp)
 
-
+    #Compress method for transforming image downloaded from Fedora into a Jpeg2000
     def compress(self, src_fp, dest_fp):
+        # Good read: http://wellcomelibrary.org/content/documents/22082/JPEG2000-preservation-format.pdf
         i = '-i "%s"' % (src_fp,)
         fifo_fp = dest_fp + 'loris_cache.jp2'
         o = '-o %s' % (fifo_fp,)
