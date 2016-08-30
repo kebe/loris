@@ -567,7 +567,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
                 sourceSuffix = '/low_resolution'
                 ident = ident.replace('-low_resolution', '')
             else:
-                sourceSuffix = '/content'
+                sourceSuffix = ''
                 ident = ident.replace('-content', '')
             #else:
                 #message = 'Could not find correct derivative for this request string: ' + ident
