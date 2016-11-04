@@ -18,6 +18,8 @@ import glob
 import requests
 import re
 
+from PIL import Image
+
 logger = getLogger(__name__)
 
 class _AbstractResolver(object):
@@ -480,20 +482,15 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         super(OsuSimpleHTTPResolver, self).__init__(config)
 
         self.source_prefix = self.config.get('source_prefix', '')
-
         self.source_suffix = self.config.get('source_suffix', '')
-
         self.default_format = self.config.get('default_format', None)
-
         self.head_resolvable = self.config.get('head_resolvable', False)
-
         self.uri_resolvable = self.config.get('uri_resolvable', False)
-
         self.user = self.config.get('user', None)
-
         self.pw = self.config.get('pw', None)
-
         self.ssl_check = self.config.get('ssl_check', True)
+
+        self.lowres_suffix = '-lowres'
 
         if 'cache_root' in self.config:
             self.cache_root = self.config['cache_root']
@@ -573,9 +570,18 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
                 #message = 'Could not find correct derivative for this request string: ' + ident
                 #raise ResolverException(404, message)
 
-            #we need to remove the version number from the ident if it exists
-            fedora_ident = re.sub(r'-version(\d)+', '' , ident)
+            # we need to remove the version number and low res indicator from
+            # the ident if it exists
+            fedora_ident = self._strip_lowres(re.sub(r'-version(\d)+', '' , ident))
             return self.source_prefix + fedora_ident + sourceSuffix
+
+    # Determine if ident is for a low resolution image
+    def _is_lowres(self, ident):
+        return self.lowres_suffix in ident
+
+    # Remove the lowres indicator from an identifier
+    def _strip_lowres(self, ident):
+        return ident.replace(self.lowres_suffix, '')
 
     #Get a subdirectory structure for the cache_subroot through hashing.
     @staticmethod
@@ -606,6 +612,90 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
 
         return file_structure
 
+    # Create cache file path
+    @staticmethod
+    def _cache_file_path(fp, format):
+        return join(fp, "loris_cache." + format)
+
+    # Add the cache string to file path and make directory
+    @staticmethod
+    def _create_cache_directory(fp):
+        try:
+            makedirs(dirname(fp))
+        except:
+            logger.debug("Directory already existed... possible problem if not a different format")
+
+
+    def _resolve_from_cache(self, ident, local_fp):
+        cached_object = glob.glob(OsuSimpleHTTPResolver._cache_file_path(local_fp, '*'))
+
+        if len(cached_object) > 0:
+            cached_object = cached_object[0]
+        else:
+            public_message = 'Cached image not found for identifier: %s.' % (ident)
+            log_message = 'Cached image not found for identifier: %s. Empty directory where image expected?' % (ident)
+            logger.warn(log_message)
+            raise ResolverException(404, public_message)
+
+        format = self.format_from_ident(cached_object, None)
+        logger.debug('src image from local disk: %s' % (cached_object,))
+        return (cached_object, format)
+
+    def _resolve_lowres(self, ident, local_fp):
+        base_ident = self._strip_lowres(ident)
+        base_local_fp = self.resolve(base_ident)
+
+        image = Image.open(base_local_fp)
+        image = image.resize((100, 100), Image.ANTIALIAS)
+
+        local_fp = OsuSimpleHTTPResolver._cache_file_path(local_fp, 'jpg')
+        OsuSimpleHTTPResolver._create_cache_directory(local_fp)
+        image.save(local_fp, 'JPEG', quality=90)
+        image.close()
+        return (local_fp, 'jpg')
+
+    def _resolve_from_remote(self, ident, local_fp):
+        fp = self._web_request_url(ident)
+        logger.debug('src image: %s' % (fp,))
+
+        try:
+            response = requests.get(fp, stream = False, verify=self.ssl_check, **self.request_options())
+        except requests.exceptions.MissingSchema:
+            public_message = 'Bad URL request made for identifier: %s.' % (ident,)
+            log_message = 'Bad URL request at %s for identifier: %s.' % (fp,ident)
+            logger.warn(log_message)
+            raise ResolverException(404, public_message)
+
+        if response.status_code != 200:
+            public_message = 'Source image not found for identifier: %s. Status code returned: %s' % (ident,response.status_code)
+            log_message = 'Source image not found at %s for identifier: %s. Status code returned: %s' % (fp,ident,response.status_code)
+            logger.warn(log_message)
+            raise ResolverException(404, public_message)
+
+        if 'content-type' in response.headers:
+            try:
+                format = self.format_from_ident(ident, constants.FORMATS_BY_MEDIA_TYPE[response.headers['content-type']])
+            except KeyError:
+                logger.warn('Your server may be responding with incorrect content-types. Reported %s for ident %s.'
+                            % (response.headers['content-type'],ident))
+                #Attempt without the content-type
+                format = self.format_from_ident(ident, None)
+        else:
+            format = self.format_from_ident(ident, None)
+
+        logger.debug('src format %s' % (format,))
+
+        local_fp = OsuSimpleHTTPResolver._cache_file_path(local_fp, format)
+        OsuSimpleHTTPResolver._create_cache_directory(local_fp)
+
+        with open(local_fp, 'wb') as file:
+            for chunk in response.iter_content(2048):
+                file.write(chunk)
+
+        logger.info("Copied %s to %s" % (fp, local_fp))
+        return (local_fp, format)
+
+
     def resolve(self, ident):
         ident = unquote(ident)
 
@@ -613,62 +703,8 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         local_fp = join(local_fp)
 
         if exists(local_fp):
-            cached_object = glob.glob(join(local_fp, 'loris_cache.*'))
-
-            if len(cached_object) > 0:
-                cached_object = cached_object[0]
-            else:
-                public_message = 'Cached image not found for identifier: %s.' % (ident)
-                log_message = 'Cached image not found for identifier: %s. Empty directory where image expected?' % (ident)
-                logger.warn(log_message)
-                raise ResolverException(404, public_message)
-
-            format = self.format_from_ident(cached_object,None)
-            logger.debug('src image from local disk: %s' % (cached_object,))
-            return (cached_object, format)
+            return self._resolve_from_cache(ident, local_fp)
+        elif self._is_lowres(ident):
+            return self._resolve_lowres(ident, local_fp)
         else:
-            fp = self._web_request_url(ident)
-
-            logger.debug('src image: %s' % (fp,))
-
-            try:
-                response = requests.get(fp, stream = False, verify=self.ssl_check, **self.request_options())
-            except requests.exceptions.MissingSchema:
-                public_message = 'Bad URL request made for identifier: %s.' % (ident,)
-                log_message = 'Bad URL request at %s for identifier: %s.' % (fp,ident)
-                logger.warn(log_message)
-                raise ResolverException(404, public_message)
-
-            if response.status_code != 200:
-                public_message = 'Source image not found for identifier: %s. Status code returned: %s' % (ident,response.status_code)
-                log_message = 'Source image not found at %s for identifier: %s. Status code returned: %s' % (fp,ident,response.status_code)
-                logger.warn(log_message)
-                raise ResolverException(404, public_message)
-
-            if 'content-type' in response.headers:
-                try:
-                    format = self.format_from_ident(ident, constants.FORMATS_BY_MEDIA_TYPE[response.headers['content-type']])
-                except KeyError:
-                    logger.warn('Your server may be responding with incorrect content-types. Reported %s for ident %s.'
-                                % (response.headers['content-type'],ident))
-                    #Attempt without the content-type
-                    format = self.format_from_ident(ident, None)
-            else:
-                format = self.format_from_ident(ident, None)
-
-            logger.debug('src format %s' % (format,))
-
-            local_fp = join(local_fp, "loris_cache." + format)
-
-            try:
-                makedirs(dirname(local_fp))
-            except:
-                logger.debug("Directory already existed... possible problem if not a different format")
-
-            with open(local_fp, 'wb') as fd:
-                for chunk in response.iter_content(2048):
-                    fd.write(chunk)
-
-            logger.info("Copied %s to %s" % (fp, local_fp))
-
-            return (local_fp, format)
+            return self._resolve_from_remote(ident, local_fp)
