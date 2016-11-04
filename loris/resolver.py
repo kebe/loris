@@ -627,6 +627,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
 
 
     def _resolve_from_cache(self, ident, local_fp):
+        logger.debug('Resolving image from cache...')
         cached_object = glob.glob(OsuSimpleHTTPResolver._cache_file_path(local_fp, '*'))
 
         if len(cached_object) > 0:
@@ -642,6 +643,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         return (cached_object, format)
 
     def _resolve_lowres(self, ident, local_fp):
+        logger.debug('Resolving low resolution image...')
         base_ident = self._strip_lowres(ident)
         base_local_fp = self.resolve(base_ident)
 
@@ -655,6 +657,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         return (local_fp, 'jpg')
 
     def _resolve_from_remote(self, ident, local_fp):
+        logger.debug('Resolving remote image over HTTP...')
         fp = self._web_request_url(ident)
         logger.debug('src image: %s' % (fp,))
 
