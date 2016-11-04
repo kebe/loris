@@ -59,11 +59,11 @@ format = '%(asctime)s (%(name)s) [%(levelname)s]: %(message)s'
 
 [resolver]
 impl = 'loris.resolver.OsuSimpleHTTPResolver'
-source_prefix='http://192.168.99.1:8984/rest/dev/'
-#source_suffix='/content'
-cache_root='/usr/local/share/images/loris'
-#user='<if needed else remove this line>'
-#pw='<if needed else remove this line>'
+source_prefix='http://fcrepo:8080/fcrepo/rest/prod/'
+cache_root='/path/to/cache'
+#default_format = 'jpg'
+user='USER'
+pw='PASSWORD'
 ssl_check=False
 
 # Sample config for TemplateHTTResolver config
