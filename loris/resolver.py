@@ -631,7 +631,9 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         logger.debug('Creating low resolution derivative.')
         logger.debug('Original image size is: %s', image.size)
 
+        # If we have the image DPI information, cap at 150 DPI
         if 'dpi' in image.info and type(image.info['dpi']) is tuple:
+            # Sometimes DPI info comes through as a float. Normalize to int.
             dpi = ( int(image.info['dpi'][0]), int(image.info['dpi'][1]) )
             logger.debug('Original image DPI is: %s', dpi)
             max_dpi = (150, 150)
@@ -640,6 +642,8 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
                 width = int(max_dpi[0] / float(dpi[0]) * image.size[0])
                 height = int(max_dpi[1] / float(dpi[1]) * image.size[1])
                 image = image.resize((width, height), Image.ANTIALIAS)
+
+        # If the image has no DPI info, cap at 850x1100px (8.5"x11" @ 100dpi)
         else:
             logger.debug('No DPI information found in original image')
             dpi = None
@@ -670,6 +674,8 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
 
     def _resolve_lowres(self, ident, local_fp):
         logger.debug('Resolving low resolution image...')
+
+        # Fetch (and cache) the original image first
         base_ident = self._strip_lowres(ident)
         base_local_fp, base_format = self.resolve(base_ident)
 
