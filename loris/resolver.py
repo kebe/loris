@@ -628,19 +628,27 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
     # Resize the lowres image based on DPI
     @staticmethod
     def _resize_lowres_image(image):
+        logger.debug('Creating low resolution derivative.')
+        logger.debug('Original image size is: %s', image.size)
+
         if 'dpi' in image.info:
             dpi = image.info['dpi']
+            logger.debug('Original image DPI is: %s', dpi)
             max_dpi = (150, 150)
             if dpi[0] > max_dpi[0] or dpi[1] > max_dpi[1]:
+                logger.debug('Image resoluton higher than %s dpi, scaling down.', max_dpi)
                 width = max_dpi[0] / float(dpi[0]) * image.size[0]
                 height = max_dpi[1] / float(dpi[1]) * image.size[1]
                 image = image.resize((width, height), Image.ANTIALIAS)
         else:
+            logger.debug('No DPI information found in original image')
             dpi = None
             max_size = (850, 1100)
             if image.size[0] > max_size[0] or image.size[1] > max_size[1]:
-                image = image.thumbnail(max_size, Image.ANTIALIAS)
+                logger.debug('Image size larger than %s, scaling down.', max_size)
+                image.thumbnail(max_size, Image.ANTIALIAS)
 
+        logger.debug('Final low res image size is: %s', image.size)
         return image, dpi
 
 
@@ -673,6 +681,8 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         local_fp = OsuSimpleHTTPResolver._cache_file_path(local_fp, 'jpg')
         OsuSimpleHTTPResolver._create_cache_directory(local_fp)
         image.save(local_fp, 'JPEG', **options)
+
+        logger.debug('Saved low resolution image to: %s', local_fp)
         return (local_fp, 'jpg')
 
     def _resolve_from_remote(self, ident, local_fp):
