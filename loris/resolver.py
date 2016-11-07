@@ -625,6 +625,24 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         except:
             logger.debug("Directory already existed... possible problem if not a different format")
 
+    # Resize the lowres image based on DPI
+    @staticmethod
+    def _resize_lowres_image(image):
+        if 'dpi' in image.info:
+            dpi = image.info['dpi']
+            max_dpi = (150, 150)
+            if dpi[0] > max_dpi[0] or dpi[1] > max_dpi[1]:
+                width = max_dpi[0] / float(dpi[0]) * image.size[0]
+                height = max_dpi[1] / float(dpi[1]) * image.size[1]
+                image = image.resize((width, height), Image.ANTIALIAS)
+        else:
+            dpi = None
+            max_size = (850, 1100)
+            if image.size[0] > max_size[0] or image.size[1] > max_size[1]:
+                image = image.thumbnail(max_size, Image.ANTIALIAS)
+
+        return image, dpi
+
 
     def _resolve_from_cache(self, ident, local_fp):
         logger.debug('Resolving image from cache...')
@@ -647,12 +665,14 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         base_ident = self._strip_lowres(ident)
         base_local_fp, base_format = self.resolve(base_ident)
 
-        image = Image.open(base_local_fp)
-        image = image.resize((100, 100), Image.ANTIALIAS)
-
+        image, dpi = OsuSimpleHTTPResolver._resize_lowres_image(Image.open(base_local_fp))
+        options = {'quality': 90}
+        if dpi:
+            options['dpi'] = dpi
+        
         local_fp = OsuSimpleHTTPResolver._cache_file_path(local_fp, 'jpg')
         OsuSimpleHTTPResolver._create_cache_directory(local_fp)
-        image.save(local_fp, 'JPEG', quality=90)
+        image.save(local_fp, 'JPEG', **options)
         return (local_fp, 'jpg')
 
     def _resolve_from_remote(self, ident, local_fp):
