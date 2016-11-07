@@ -632,7 +632,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         logger.debug('Original image size is: %s', image.size)
 
         if 'dpi' in image.info and type(image.info['dpi']) is tuple:
-            dpi = ( int(image.info['dpi'][0], int(image.info['dpi'][1]) )
+            dpi = ( int(image.info['dpi'][0]), int(image.info['dpi'][1]) )
             logger.debug('Original image DPI is: %s', dpi)
             max_dpi = (150, 150)
             if dpi[0] > max_dpi[0] or dpi[1] > max_dpi[1]:
