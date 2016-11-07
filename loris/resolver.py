@@ -645,7 +645,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
     def _resolve_lowres(self, ident, local_fp):
         logger.debug('Resolving low resolution image...')
         base_ident = self._strip_lowres(ident)
-        base_local_fp = self.resolve(base_ident)
+        base_local_fp, base_format = self.resolve(base_ident)
 
         image = Image.open(base_local_fp)
         image = image.resize((100, 100), Image.ANTIALIAS)
@@ -653,7 +653,6 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         local_fp = OsuSimpleHTTPResolver._cache_file_path(local_fp, 'jpg')
         OsuSimpleHTTPResolver._create_cache_directory(local_fp)
         image.save(local_fp, 'JPEG', quality=90)
-        image.close()
         return (local_fp, 'jpg')
 
     def _resolve_from_remote(self, ident, local_fp):
