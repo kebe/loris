@@ -637,8 +637,8 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
             max_dpi = (150, 150)
             if dpi[0] > max_dpi[0] or dpi[1] > max_dpi[1]:
                 logger.debug('Image resoluton higher than %s dpi, scaling down.', max_dpi)
-                width = max_dpi[0] / float(dpi[0]) * image.size[0]
-                height = max_dpi[1] / float(dpi[1]) * image.size[1]
+                width = int(max_dpi[0] / float(dpi[0]) * image.size[0])
+                height = int(max_dpi[1] / float(dpi[1]) * image.size[1])
                 image = image.resize((width, height), Image.ANTIALIAS)
         else:
             logger.debug('No DPI information found in original image')
