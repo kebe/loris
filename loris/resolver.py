@@ -487,11 +487,13 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         self.head_resolvable = self.config.get('head_resolvable', False)
         self.uri_resolvable = self.config.get('uri_resolvable', False)
         self.session_cookie = self.config.get('session_cookie', None)
+        self.gatekeeper_prefix = self.config.get('gatekeeper_prefix', None)
         self.user = self.config.get('user', None)
         self.pw = self.config.get('pw', None)
         self.ssl_check = self.config.get('ssl_check', True)
 
         self.lowres_suffix = '-lowres'
+        self.alt_ident = None
 
         if 'cache_root' in self.config:
             self.cache_root = self.config['cache_root']
@@ -506,37 +508,56 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
             logger.error(message)
             raise ResolverException(500, message)
 
+    # parameters to pass to all head and get requests
     def request_options(self):
-        # parameters to pass to all head and get requests;
-        # currently only authorization, if configured
+        options = {verify: self.ssl_check}
         if self.user is not None and self.pw is not None:
-            return {'auth': (self.user, self.pw)}
-        return {}
+            options['auth'] = (self.user, self.pw)
+        return options
 
     def is_resolvable(self, ident, request=None):
         ident = unquote(ident)
-
         fp = self._cache_directory(ident)
-        if exists(fp):
+
+        if self.gatekeeper_prefix:
+            logger.debug('Checking that identifier is resolvable using gatekeeper service')
+            request_options = {'headers': {'Accept': 'application/json'}, 'verify': self.ssl_check, 'stream': True}
+            session_content = request.cookies.get(self.session_cookie) if request else None
+            if session_content:
+                logger.debug('Found session cookie %s', self.session_cookie)
+                request_options['cookies'] = {self.session_cookie: session_content}
+
+            try:
+                with closing(requests.get(self._gatekeeper_url(ident), **request_options)) as response:
+                    if response.status_code is 200:
+                        data = response.json()
+                        if 'use_identifier' in data:
+                            self.alt_ident = data['use_identifier']
+                            logger.debug('Gatekeeper provided alternate identifier: %s', self.alt_ident)
+                        return True
+            except Exception: 
+                logger.debug('Encountered error checking gatekeeper URL!')
+            return False
+        elif exists(fp):
+            logger.debug('Local cache file exists. Identifier is resolvable.')
             return True
+        elif self.head_resolvable:
+            logger.debug('Checking that identifier is resolvable using head request')
+            try:
+                with closing(requests.head(self._web_request_url(ident), **self.request_options())) as response:
+                    if response.status_code is 200:
+                        return True
+            except requests.exceptions.MissingSchema:
+                return False
+
         else:
-            fp = self._web_request_url(ident)
-
-            if self.head_resolvable:
-                try:
-                    with closing(requests.head(fp, verify=self.ssl_check, **self.request_options())) as response:
-                        if response.status_code is 200:
-                            return True
-                except requests.exceptions.MissingSchema:
-                    return False
-
-            else:
-                try:
-                    with closing(requests.get(fp, stream=True, verify=self.ssl_check, **self.request_options())) as response:
-                        if response.status_code is 200:
-                            return True
-                except requests.exceptions.MissingSchema:
-                    return False
+            logger.debug('Checking that identifier is resolvable using get request')
+            try:
+                with closing(requests.get(self._web_request_url(ident), stream=True, **self.request_options())) as response:
+                    if response.status_code is 200:
+                        return True
+            except requests.exceptions.MissingSchema:
+                return False
 
         return False
 
@@ -552,6 +573,9 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
             log_message = 'Format could not be determined for: %s.' % (ident)
             logger.warn(log_message)
             raise ResolverException(404, public_message)
+
+    def _gatekeeper_url(self, ident)
+        return self.gatekeeper_prefix + ident
 
     def _web_request_url(self, ident):
         if (ident[0:6] == 'http:/' or ident[0:7] == 'https:/') and self.uri_resolvable:
@@ -697,7 +721,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         logger.debug('src image: %s' % (fp,))
 
         try:
-            response = requests.get(fp, stream = False, verify=self.ssl_check, **self.request_options())
+            response = requests.get(fp, stream = False, **self.request_options())
         except requests.exceptions.MissingSchema:
             public_message = 'Bad URL request made for identifier: %s.' % (ident,)
             log_message = 'Bad URL request at %s for identifier: %s.' % (fp,ident)
@@ -735,7 +759,10 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
 
 
     def resolve(self, ident, request=None):
-        ident = unquote(ident)
+        if self.alt_ident:
+            ident = self.alt_ident
+        else:
+            ident = unquote(ident)
         local_fp = self._cache_directory(ident)
 
         if exists(local_fp):
