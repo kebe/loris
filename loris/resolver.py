@@ -26,7 +26,7 @@ class _AbstractResolver(object):
     def __init__(self, config):
         self.config = config
 
-    def is_resolvable(self, ident):
+    def is_resolvable(self, ident, request=None):
         """
         The idea here is that in some scenarios it may be cheaper to check 
         that an id is resolvable than to actually resolve it. For example, for 
@@ -41,7 +41,7 @@ class _AbstractResolver(object):
         cn = self.__class__.__name__
         raise NotImplementedError('is_resolvable() not implemented for %s' % (cn,))
 
-    def resolve(self, ident):
+    def resolve(self, ident, request=None):
         """
         Given the identifier of an image, get the path (fp) and format (one of. 
         'jpg', 'tif', or 'jp2'). This will likely need to be reimplemented for
@@ -65,7 +65,7 @@ class SimpleFSResolver(_AbstractResolver):
         super(SimpleFSResolver, self).__init__(config)
         self.cache_root = self.config['src_img_root']
 
-    def is_resolvable(self, ident):
+    def is_resolvable(self, ident, request=None):
         ident = unquote(ident)
         fp = join(self.cache_root, ident)
         return exists(fp)
@@ -74,7 +74,7 @@ class SimpleFSResolver(_AbstractResolver):
     def _format_from_ident(ident):
         return ident.split('.')[-1]
 
-    def resolve(self, ident):
+    def resolve(self, ident, request=None):
         # For this dumb version a constant path is prepended to the identfier 
         # supplied to get the path It assumes this 'identifier' ends with a file 
         # extension from which the format is then derived.
@@ -109,7 +109,7 @@ class ExtensionNormalizingFSResolver(SimpleFSResolver):
         super(ExtensionNormalizingFSResolver, self).__init__(config)
         self.extension_map = self.config['extension_map']
 
-    def resolve(self, ident):
+    def resolve(self, ident, request=None):
         fp, format = super(ExtensionNormalizingFSResolver, self).resolve(ident)
         format = format.lower()
         format = self.extension_map.get(format, format)
@@ -175,7 +175,7 @@ class SimpleHTTPResolver(_AbstractResolver):
             return {'auth': (self.user, self.pw)}
         return {}
 
-    def is_resolvable(self, ident):
+    def is_resolvable(self, ident, request=None):
         ident = unquote(ident)
         fp = join(self.cache_root, SimpleHTTPResolver._cache_subroot(ident))
         if exists(fp):
@@ -253,7 +253,7 @@ class SimpleHTTPResolver(_AbstractResolver):
 
         return file_structure
 
-    def resolve(self, ident):
+    def resolve(self, ident, request=None):
         ident = unquote(ident)
 
         local_fp = join(self.cache_root, SimpleHTTPResolver._cache_subroot(ident))
@@ -420,7 +420,7 @@ class SourceImageCachingResolver(_AbstractResolver):
         self.cache_root = self.config['cache_root']
         self.source_root = self.config['source_root']
 
-    def is_resolvable(self, ident):
+    def is_resolvable(self, ident, request=None):
         ident = unquote(ident)
         fp = join(self.source_root, ident)
         return exists(fp)
@@ -429,7 +429,7 @@ class SourceImageCachingResolver(_AbstractResolver):
     def _format_from_ident(ident):
         return ident.split('.')[-1]
 
-    def resolve(self, ident):
+    def resolve(self, ident, request=None):
         ident = unquote(ident)
         local_fp = join(self.cache_root, ident)
 
@@ -734,7 +734,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         return (local_fp, format)
 
 
-    def resolve(self, ident):
+    def resolve(self, ident, request=None):
         ident = unquote(ident)
         local_fp = self._cache_directory(ident)
 
