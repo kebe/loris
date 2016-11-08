@@ -574,7 +574,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
             logger.warn(log_message)
             raise ResolverException(404, public_message)
 
-    def _gatekeeper_url(self, ident)
+    def _gatekeeper_url(self, ident):
         return self.gatekeeper_prefix + ident
 
     def _web_request_url(self, ident):
