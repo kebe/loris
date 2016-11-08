@@ -271,7 +271,7 @@ class Loris(object):
         if ident == '':
             return self.get_index(request)
 
-        if not self.resolver.is_resolvable(ident):
+        if not self.resolver.is_resolvable(ident, request):
             msg = "could not resolve identifier: %s " % (ident)
             return NotFoundResponse(msg)
         elif params == '' and request_type == 'info':

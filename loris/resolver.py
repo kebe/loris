@@ -486,6 +486,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         self.default_format = self.config.get('default_format', None)
         self.head_resolvable = self.config.get('head_resolvable', False)
         self.uri_resolvable = self.config.get('uri_resolvable', False)
+        self.session_cookie = self.config.get('session_cookie', None)
         self.user = self.config.get('user', None)
         self.pw = self.config.get('pw', None)
         self.ssl_check = self.config.get('ssl_check', True)
@@ -512,9 +513,10 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
             return {'auth': (self.user, self.pw)}
         return {}
 
-    def is_resolvable(self, ident):
+    def is_resolvable(self, ident, request=None):
         ident = unquote(ident)
-        fp = join(self.cache_root, OsuSimpleHTTPResolver._cache_subroot(ident))
+
+        fp = self._cache_directory(ident)
         if exists(fp):
             return True
         else:
@@ -583,9 +585,8 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
     def _strip_lowres(self, ident):
         return ident.replace(self.lowres_suffix, '')
 
-    #Get a subdirectory structure for the cache_subroot through hashing.
-    @staticmethod
-    def _cache_subroot(ident):
+    #Get a subdirectory structure for the ident cache through hashing.
+    def _cache_directory(self, ident):
         cache_subroot = ''
 
         #Split out potential pidspaces... Fedora Commons most likely use case.
@@ -596,8 +597,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
             cache_subroot = 'http'
 
         cache_subroot = join(cache_subroot, OsuSimpleHTTPResolver._ident_file_structure(ident))
-
-        return cache_subroot
+        return join(self.cache_root, cache_subroot)
 
     #Get the directory structure of the identifier itself
     @staticmethod
@@ -736,9 +736,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
 
     def resolve(self, ident):
         ident = unquote(ident)
-
-        local_fp = join(self.cache_root, OsuSimpleHTTPResolver._cache_subroot(ident))
-        local_fp = join(local_fp)
+        local_fp = self._cache_directory(ident)
 
         if exists(local_fp):
             return self._resolve_from_cache(ident, local_fp)
