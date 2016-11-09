@@ -663,11 +663,11 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
                 height = int(max_dpi[1] / float(dpi[1]) * image.size[1])
                 image = image.resize((width, height), Image.ANTIALIAS)
 
-        # If the image has no DPI info, cap at 850x1100px (8.5"x11" @ 100dpi)
+        # If the image has no DPI info, cap at 1275x1650px (8.5"x11" @ 150dpi)
         else:
             logger.debug('No DPI information found in original image')
             dpi = None
-            max_size = (850, 1100)
+            max_size = (1275, 1650)
             if image.size[0] > max_size[0] or image.size[1] > max_size[1]:
                 logger.debug('Image size larger than %s, scaling down.', max_size)
                 image.thumbnail(max_size, Image.ANTIALIAS)
