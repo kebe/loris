@@ -520,7 +520,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
 
         if self.gatekeeper_prefix:
             logger.debug('Checking that identifier is resolvable using gatekeeper service')
-            request_options = {'headers': {'Accept': 'application/json'}, 'verify': self.ssl_check, 'stream': True}
+            request_options = {'headers': {'Accept': 'application/json'}, 'verify': self.ssl_check, 'stream': True, 'allow_redirects': False}
             session_content = request.cookies.get(self.session_cookie) if request else None
             if session_content:
                 logger.debug('Found session cookie %s', self.session_cookie)
