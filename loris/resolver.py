@@ -761,8 +761,10 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
     def resolve(self, ident, request=None):
         if self.alt_ident:
             ident = self.alt_ident
-        else:
-            ident = unquote(ident)
+            # Clear alternate identifier in case we need to call resolve() recursively
+            self.alt_ident = None
+
+        ident = unquote(ident)
         local_fp = self._cache_directory(ident)
 
         if exists(local_fp):
