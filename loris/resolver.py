@@ -510,7 +510,7 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
 
     # parameters to pass to all head and get requests
     def request_options(self):
-        options = {verify: self.ssl_check}
+        options = {'verify': self.ssl_check}
         if self.user is not None and self.pw is not None:
             options['auth'] = (self.user, self.pw)
         return options
