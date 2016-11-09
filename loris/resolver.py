@@ -528,12 +528,13 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
 
             try:
                 with closing(requests.get(self._gatekeeper_url(ident), **request_options)) as response:
-                    if response.status_code is 200:
-                        return True
+                    if response.status_code is not 200:
+                        return False
             except Exception: 
                 logger.debug('Encountered error checking gatekeeper URL!')
-            return False
-        elif exists(fp):
+                return False
+
+        if exists(fp):
             logger.debug('Local cache file exists. Identifier is resolvable.')
             return True
         elif self.head_resolvable:

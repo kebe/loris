@@ -327,7 +327,7 @@ class Loris(object):
         if self.redirect_id_slash_to_info and maybe_ident.endswith('/'):
             maybe_ident = maybe_ident[:-1]
 
-        if self.resolver.is_resolvable(maybe_ident):
+        if self.resolver.is_resolvable(maybe_ident, r):
             ident = maybe_ident
             params = ''
 
