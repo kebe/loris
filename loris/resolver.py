@@ -493,7 +493,6 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
         self.ssl_check = self.config.get('ssl_check', True)
 
         self.lowres_suffix = '-lowres'
-        self.alt_ident = None
 
         if 'cache_root' in self.config:
             self.cache_root = self.config['cache_root']
@@ -530,10 +529,6 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
             try:
                 with closing(requests.get(self._gatekeeper_url(ident), **request_options)) as response:
                     if response.status_code is 200:
-                        data = response.json()
-                        if 'use_identifier' in data:
-                            self.alt_ident = data['use_identifier']
-                            logger.debug('Gatekeeper provided alternate identifier: %s', self.alt_ident)
                         return True
             except Exception: 
                 logger.debug('Encountered error checking gatekeeper URL!')
@@ -759,11 +754,6 @@ class OsuSimpleHTTPResolver(_AbstractResolver):
 
 
     def resolve(self, ident, request=None):
-        if self.alt_ident:
-            ident = self.alt_ident
-            # Clear alternate identifier in case we need to call resolve() recursively
-            self.alt_ident = None
-
         ident = unquote(ident)
         local_fp = self._cache_directory(ident)
 
